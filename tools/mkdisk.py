@@ -80,6 +80,8 @@ def build_disk(out_adf, files, dirs=(), empty_files=()):
         cmds = []
         for p in DELETE:
             cmds += ["+", "delete", p, "all"]
+        for d in dirs:
+            cmds += ["+", "makedir", d]
         for i, (ami, src) in enumerate(files.items()):
             host = os.path.join(work, f"f{i}")
             if os.path.exists(src):
@@ -89,8 +91,6 @@ def build_disk(out_adf, files, dirs=(), empty_files=()):
                     f.write(src)
             cmds += ["+", "write", f"f{i}", ami]
         open(os.path.join(work, "empty"), "w").close()
-        for d in dirs:
-            cmds += ["+", "makedir", d]
         for p in empty_files:
             cmds += ["+", "write", "empty", p]
         cp = subprocess.run(["docker", "run", "--rm", "-u", f"{os.getuid()}:{os.getgid()}",

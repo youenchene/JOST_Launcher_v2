@@ -1,0 +1,10 @@
+wait 5
+press fire
+wait-serial "launch=" 100
+wait 3000
+screenshot game
+key 0x59
+wait 100
+screenshot q2
+wait 1000
+screenshot q20

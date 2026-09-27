@@ -29,6 +29,7 @@ GAMES = ["A/Arkanoid_v1.9_0954.lha", "B/BubbleBobble_v1.3_2518.lha", "G/GreatGia
          "L/Lemmings_v1.5_Files_2089.lha", "P/Pang_v2.2_0929.lha", "P/PinballDreams_v1.9_0377.lha"]
 
 STARTUP = """c:SetPatch >NIL:
+echo "booted" >DH0:booted
 c:palfix
 resident CLI L:Shell-Seg SYSTEM pure add
 resident c:Execute pure
@@ -53,7 +54,7 @@ def main():
     docker(demo, "xdftool", "wb.adf", "unpack", ".")
     os.remove(os.path.join(demo, "wb.adf"))
     for f in os.listdir(demo):
-        if f.startswith("Workbench1.3."):
+        if f.startswith("Workbench1.3.") or f == "boot.adf":
             os.remove(os.path.join(demo, f))
     os.rename(os.path.join(demo, "Workbench1.3"), os.path.join(demo, "DH0"))
     dh0 = os.path.join(demo, "DH0")
@@ -77,6 +78,10 @@ def main():
     got = [d for d in os.listdir(games) if os.path.isdir(os.path.join(games, d))]
     if len(got) < len(GAMES):
         raise SystemExit(f"only {len(got)} of {len(GAMES)} games extracted: {got}")
+    # Boot floppy (tested headless: tests/real): FS-UAE doesn't boot Kickstart
+    # 1.3 from a directory drive, so df0 boots jl + jst + Bubble Bobble.
+    from mkgamedisk import build
+    build(os.path.join(demo, "boot.adf"), os.path.join(games, "BubbleBobble"))
     for d, _, files in os.walk(dh0):     # drop the per-file .info icons of games: less to scan
         for f in files:
             if f.endswith(".uaem"):
@@ -92,6 +97,7 @@ def main():
         model = "" if "amiga_model" in mem else "amiga_model = A500\n"
         with open(os.path.join(demo, name), "w") as f:
             f.write(f"[fs-uae]\n{model}{mem}kickstart_file = {KICK}\n"
+                    f"floppy_drive_count = 1\nfloppy_drive_0 = {os.path.join(demo, 'boot.adf')}\n"
                     f"hard_drive_0 = {dh0}\nhard_drive_0_label = DH0\njoystick_port_1 = keyboard\n")
     pick = "cdtv8" if "--cdtv8" in sys.argv else "cdtv" if "--cdtv" in sys.argv else None
     cfg = os.path.join(demo, f"jl-demo-{pick}.fs-uae" if pick else "jl-demo.fs-uae")

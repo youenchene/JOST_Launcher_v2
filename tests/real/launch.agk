@@ -1,0 +1,13 @@
+# Real jst + a real WHDLoad game (tools/mkgamedisk.py): launch, play, quit
+# with the slave's quit key (F10), and the launcher must come back.
+wait 5
+press fire
+wait-serial "launch=" 100
+wait 3000
+screenshot game
+key 0x59
+wait-serial "returned=" 3000
+wait-serial "ev=start" 3000
+wait 20
+screenshot back
+expect-serial "launch=BubbleBobble.slave\n(AGK .*\n)*AGK returned=1\n(AGK .*\n)*AGK ev=start mode=0 sel=0 count=1"

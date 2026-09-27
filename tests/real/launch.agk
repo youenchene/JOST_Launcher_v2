@@ -1,5 +1,6 @@
 # Real jst + a real WHDLoad game (tools/mkgamedisk.py): launch, then look.
 wait 5
+screenshot menu
 press fire
 wait-serial "launch=" 100
 wait 1500

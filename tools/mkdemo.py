@@ -91,6 +91,7 @@ def main():
     configs = {"jl-demo.fs-uae": "chip_memory = 512\nslow_memory = 512\n",
                "jl-demo-cdtv8.fs-uae": "chip_memory = 1024\nslow_memory = 0\nfast_memory = 8192\n"
                                        "uae_chipset = ecs_agnus\n"}
+    configs["jl-demo-a500-1mchip.fs-uae"] = "chip_memory = 1024\nslow_memory = 0\nuae_chipset = ecs_agnus\n"
     configs["jl-demo-cdtv.fs-uae"] = (f"amiga_model = CDTV\nkickstart_ext_file = {CDTV_EXT}\n"
                                       "chip_memory = 1024\nfast_memory = 8192\n"
                                       "uae_floppy0type = 0\n"   # the CDTV preset has no DF0
@@ -101,7 +102,7 @@ def main():
             f.write(f"[fs-uae]\n{model}{mem}kickstart_file = {KICK}\n"
                     f"floppy_drive_count = 1\nfloppy_drive_0 = {os.path.join(demo, 'boot.adf')}\n"
                     f"hard_drive_0 = {dh0}\nhard_drive_0_label = DH0\njoystick_port_1 = keyboard\n")
-    pick = "cdtv8" if "--cdtv8" in sys.argv else "cdtv" if "--cdtv" in sys.argv else None
+    pick = next((p for p in ("cdtv8", "cdtv", "a500-1mchip") if f"--{p}" in sys.argv), None)
     cfg = os.path.join(demo, f"jl-demo-{pick}.fs-uae" if pick else "jl-demo.fs-uae")
     print(f"built {os.path.relpath(demo, ROOT)}: {len(GAMES)} games, config {os.path.relpath(cfg, ROOT)}")
     if "--open" in sys.argv:

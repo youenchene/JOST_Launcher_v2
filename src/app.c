@@ -295,7 +295,7 @@ static tRun runUi(tApp *a) {
 		if(ev & JL_IN_QUIT) return RUN_QUIT;
 		if(ev & JL_IN_SCAN) scan(a);
 		else if(ev & JL_IN_FOLDER) toggleFolders(a);
-		else if(ev & JL_IN_FIRE) {
+		else if(ev & (JL_IN_FIRE | JL_IN_CANCEL)) { // v0.x: A or B launches
 			if(activate(a)) return RUN_LAUNCH;
 		}
 		else if(ev & JL_IN_DIRS) move(a, ev);

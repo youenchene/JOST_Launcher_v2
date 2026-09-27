@@ -13,36 +13,52 @@ This is kind of a clone of TinyLauncher from "Master" Gibs (french will
 understand this stupid joke).
 
 The target setup for this launcher is a CDTV with 8Mo fast memory and
-BlueCDTV/BlueSCSI SD Card hard disk. It also runs on a stock A500 with
-1.3 kickstart and 512K chip + 512K slow memory.
+BlueCDTV/BlueSCSI SD Card hard disk. It runs on kickstart 1.3 only, and
+is tested on:
+ - a CDTV-like machine: 1Mo chip + 8Mo fast
+ - a stock A500: 512K chip + 512K slow
+ - an A500 with 1Mo chip and no other memory
 
 You can fully control the launcher with your CDTV Remote, mouse mode
  or joy mode.
 
-Version 2 is a rewrite in C of the Blitz Basic version, same look:
- - faster: the list shows in about half the time, a game starts in
-   about 2 s instead of 10 s
- - lower memory: only 13K of the launcher stays in memory while a
-   game runs (the game gets 407K of 420K free memory on a 1Mo A500, 222K
-   with 0.3)
- - no limit on the number of games (0.3 stopped at 255)
+Version 2 is a rewrite in C of the Blitz Basic version, same look and
+same config file. Measured on an A500 (512K chip + 512K slow), 250 games:
+
+                          0.3            2.0
+  list on screen          23.4 s         10.8 s
+  fire -> jst starts      ~10.7 s        ~1.9 s
+  memory left for game    222K           407K (of 420K free)
+  back after a game       list broken    same list, same selection
+  number of games         255 max        no limit (tested with 3000)
+
+Only 13K of the launcher stays in memory while a game runs: `jl` is a
+small resident part, it unloads the menu (`jl-menu`) before starting
+jst and loads it again when the game quits.
 
 Source : https://github.com/youenchene/JOST_Launcher_v2
 
-# How to setup
+# How to install
 
 Prequisites :
+- Kickstart 1.3. Legit files can be bought from Amiga Forever
 - You need `jst` in your `C:` folder. (https://github.com/jotd666/jst)
-- Kickstarts files. Legit files can be bought from Amiga Forever
+- Your WHDLoad games installed in a folder, unpacked (jst can't read
+  XPK packed files)
 
-1. Copy `jl` and `jl-menu` executables in your `C:` folder.
-2. Change content and copy `jl-config.cfg` to `S:` folder
-3. Launch jl and launch a scan. It should add a `jl-inventory.data` in
-   your `S:` folder
+1. Unpack the archive: `lha x jl.lha`
+2. Copy both executables to `C:`, both are needed:
+   `copy jl C:` and `copy jl-menu C:`
+3. Set `scan_dir_1` in `jl-config.cfg` to your games folder and copy it
+   to `S:`: `copy jl-config.cfg S:`
+4. Run `jl`, press S (or 0 on the remote) then Enter to scan. The list
+   is saved in `S:jl-inventory.data`, next starts don't need a scan.
 
-Launch it through CLI or add it in your startup sequence.
+Launch it through CLI or add `jl` at the end of your startup sequence.
 
-Inventory files from 0.x still work.
+Upgrading from 0.x: replace `C:jl` with the new one and add
+`C:jl-menu`. Your `S:jl-config.cfg` and `S:jl-inventory.data` still
+work.
 
 # How to control
 
@@ -51,6 +67,7 @@ CDTV Remote (mouse mode or joy mode) :
 - A or B button To launch
 - 0 to scan your whdload games or demo folder.
 - 1 to switch to folder mode
+- B button to cancel a scan
 
 Any joystick/joypad :
 - Arrow to navigate
@@ -58,8 +75,9 @@ Any joystick/joypad :
 
 Keyboard :
 - Arrow to navigate
-- Enter button To launch
-- S to scan your whdload games or demo folder.
+- Enter (or keypad Enter) To launch
+- S to scan your whdload games or demo folder, C to cancel
+  the scan
 - F to switch to folder mode
 - Escape to quit
 
@@ -71,6 +89,16 @@ inventory_file=S:jl-inventory.data
 folder_mode_by_default=true       start in folder mode
 jst_command=jst                   command used to start a slave
 
+`jst_command` is looked up in `C:` and started directly. If it can't be
+loaded from there, it is started through a shell. It must be a normal
+program: BCPL commands of the 1.3 C: directory (like Echo) can't be used.
+
+In folder mode, games are grouped by the parent folder of their own
+folder (`Games:Games/_Arcade/Pang` is in `_Arcade`).
+
+A game whose folder doesn't exist any more shows "Could not start":
+scan again.
+
 # Release Notes
 
 ## 2.0
@@ -79,7 +107,8 @@ jst_command=jst                   command used to start a slave
    a new copy of itself after each game)
  - fix: games missing or out of order in the list above 255 games
  - fix: long slave file names cut at 30 characters
- - perf: jst is started directly, without a script or a shell
+ - perf: jst is started directly, without a script, a shell or a
+   `RAM:` file, with a 4K stack like the 1.3 shell
  - perf: the menu is unloaded while a game runs (13K stays resident)
  - perf: the inventory is saved in name order, next starts skip the
    sort
@@ -87,6 +116,12 @@ jst_command=jst                   command used to start a slave
  - feat: up to 4 scan folders (`scan_dir_2` to `scan_dir_4`)
  - feat: new optional config entry `jst_command`
  - feat: "Could not start" message when a game can't be launched
+   (e.g. its folder was moved: 0.x started jst anyway)
+ - feat: keypad Enter launches too
+ - feat: C, B or button 2 cancels a scan
+ - refactor: two executables, `jl` (resident, 8K) and `jl-menu` (the
+   menu): copy both to `C:`
+ - chore: releases built and published on GitHub
 
 ## 0.3
  - feat: folder view mode

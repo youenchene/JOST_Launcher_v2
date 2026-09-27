@@ -66,6 +66,7 @@ CDTV Remote (mouse mode or joy mode) :
 - A or B button To launch
 - 0 to scan your whdload games or demo folder.
 - 1 to switch to folder mode
+- B button to cancel a scan
 
 Any joystick/joypad :
 - Arrow to navigate
@@ -73,8 +74,8 @@ Any joystick/joypad :
 
 Keyboard :
 - Arrow to navigate
-- Enter button To launch
-- S to scan your whdload games or demo folder.
+- Enter (or keypad Enter) To launch
+- S to scan your whdload games or demo folder, C to cancel the scan
 - F to switch to folder mode
 - Escape to quit
 

@@ -15,3 +15,7 @@ expect-serial "returned=1\n(AGK .*\n)*AGK ev=start mode=0 sel=3 count=1200"
 expect-serial "resorted=1\n[\s\S]*returned=1\n[\s\S]*sorted=1"
 # the game starts with the menu unloaded: only the stub stays resident
 expect-serial "launch=3DConstructionKit.slave\n(AGK .*\n)*AGK chip=\d+ fast=\d+ .*mem=report"
+# the 2nd button launches too (CDTV remote B, as in v0.x)
+press fire2
+wait 1500
+expect-serial "returned=1\n[\s\S]*launch=3DConstructionKit.slave\n(AGK .*\n)*AGK returned=1"

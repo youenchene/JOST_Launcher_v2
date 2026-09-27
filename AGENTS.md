@@ -22,8 +22,12 @@ tools/check -p a500         # one profile
 tools/check --update        # also re-record goldens: only for an intended visual change, say which
 ```
 
-`agk` is the Amiga Game Kit at `~/Code/amiga/amiga-game-kit/tools/agk` (override
-with `$AGK`). Always go through `tools/check`: the harness counts `tests/*.agk`
+`agk` is the [Amiga Game Kit](https://github.com/codebase/amiga-game-kit)
+CLI: on `PATH`, in a sibling checkout (`../amiga-game-kit`), or `$AGK`. Inputs
+that can't be in the repo (Workbench 1.3 ADF, WHDLoad games, jst, ROMs) are set
+in `tools/env.local`: copy `tools/env.example`.
+
+Always go through `tools/check`: the harness counts `tests/*.agk`
 and `agk.toml` as sources, and `tools/mkdisk.py` has to rebuild the test disk
 after every build.
 
@@ -111,7 +115,7 @@ target CDTV), `a500-1mchip`.
 
 ## Local changes to the kit
 
-These are in `~/Code/amiga/amiga-game-kit`, not upstream. Redo them on a fresh
+These are in a local checkout of the [kit](https://github.com/codebase/amiga-game-kit), not upstream. Redo them on a fresh
 checkout:
 - **vAmiga:** built with Apple clang, because Homebrew LLVM's headers clash
   with the macOS SDK.

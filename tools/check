@@ -5,7 +5,7 @@
 #   tools/check -p cdtv      # one profile (extra args go to agk test)
 set -euo pipefail
 cd "$(dirname "$0")/.."
-AGK="${AGK:-$HOME/Code/amiga/amiga-game-kit/tools/agk}"
+AGK="$(python3 -c 'import sys; sys.path.insert(0, "tools"); import localpaths; print(localpaths.agk())')"
 "$AGK" unit
 "$AGK" build
 python3 tools/mkdisk.py

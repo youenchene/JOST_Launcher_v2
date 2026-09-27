@@ -16,10 +16,11 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import mkdisk  # noqa: E402
+import localpaths  # noqa: E402
 from cellmap import load, kind  # noqa: E402
 
 ROOT = mkdisk.ROOT
-AGK = os.environ.get("AGK", os.path.expanduser("~/Code/amiga/amiga-game-kit/tools/agk"))
+AGK = localpaths.agk()
 V0 = os.path.join(ROOT, "bench", "jl-v0.3")
 SHOT_EVERY, SHOTS = 10, 150
 LAUNCH_WAIT = 1500

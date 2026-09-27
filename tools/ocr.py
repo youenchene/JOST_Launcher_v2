@@ -3,7 +3,7 @@
 
     tools/ocr.py SHOT.png [ROM]    # full frame from the harness (716x285)
 
-Glyphs come from the topaz 8 font in the Kickstart ROM ($JL_KICK13). Lets an
+Glyphs come from the topaz 8 font in the Kickstart ROM ($JL_KICK13, see tools/env.example). Lets an
 agent read CLI messages (jst errors...) without looking at images.
 """
 import os
@@ -11,8 +11,10 @@ import struct
 import sys
 from PIL import Image
 
-ROM = os.environ.get("JL_KICK13", os.path.expanduser(
-    "~/Code/amiga/Kickstarts/Kickstart v1.3 rev 34.5 (1987)(Commodore)(A500-A1000-A2000-CDTV).rom"))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import localpaths  # noqa: E402
+
+ROM = localpaths.kick13()
 BASE = 0xFC0000
 
 

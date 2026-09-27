@@ -6,3 +6,4 @@ bench/v2/
 bench/jl-v0.3
 bench/v2m*/
 bench/v2stub/
+tools/env.local

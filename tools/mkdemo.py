@@ -6,8 +6,8 @@ Kickstart 1.3 (512K chip + 512K slow, like a stock A500 with trapdoor RAM).
     tools/mkdemo.py [--open] [--cdtv8|--cdtv]   # --cdtv8: A500 1MB chip + 8MB fast;
                                             # --cdtv: FS-UAE's CDTV model + CDTV ext ROM
 
-Inputs (not in the repo): $JL_WB13_ADF, $JL_WHDLOAD (see mkdisk.py),
-$JL_JST_ZIP (jst 7.1 zip), $JL_KICK13 (Kickstart 1.3 ROM).
+Inputs (not in the repo, set in tools/env.local, see tools/env.example):
+$JL_WB13_ADF, $JL_WHDLOAD, $JL_JST_ZIP, $JL_KICK13, $JL_CDTV_EXT (--cdtv).
 Output: build/demo/DH0 (the drive) and build/demo/jl-demo.fs-uae.
 """
 import os
@@ -18,13 +18,12 @@ import zipfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import mkdisk  # noqa: E402
+import localpaths  # noqa: E402
 
 ROOT = mkdisk.ROOT
-JST_ZIP = os.environ.get("JL_JST_ZIP", "/Volumes/Youen/Retro/Amiga/CDTV-HD/jst_7.1.zip")
-CDTV_EXT = os.environ.get("JL_CDTV_EXT", os.path.expanduser(
-    "~/Code/amiga/Kickstarts/CDTV Extended-ROM v1.0 (1991)(Commodore)(CDTV)[!].rom"))
-KICK = os.environ.get("JL_KICK13", os.path.expanduser(
-    "~/Code/amiga/Kickstarts/Kickstart v1.3 rev 34.5 (1987)(Commodore)(A500-A1000-A2000-CDTV).rom"))
+JST_ZIP = localpaths.optional("JL_JST_ZIP", "")
+CDTV_EXT = localpaths.optional("JL_CDTV_EXT", "")
+KICK = localpaths.kick13()
 GAMES = ["A/Arkanoid_v1.9_0954.lha", "B/BubbleBobble_v1.3_2518.lha", "G/GreatGianaSisters_v1.6_2945.lha",
          "L/Lemmings_v1.5_Files_2089.lha", "P/Pang_v2.2_0929.lha", "P/PinballDreams_v1.9_0377.lha"]
 
@@ -47,10 +46,12 @@ def docker(work, *cmd, check=True):
 
 
 def main():
+    localpaths.need("JL_WHDLOAD", "WHDLoad collection")
+    localpaths.need("JL_JST_ZIP", "jst 7.1 zip")
     demo = os.path.join(ROOT, "build", "demo")
     shutil.rmtree(demo, ignore_errors=True)
     os.makedirs(demo)
-    shutil.copy(mkdisk.WB, os.path.join(demo, "wb.adf"))
+    shutil.copy(mkdisk.workbench(), os.path.join(demo, "wb.adf"))
     docker(demo, "xdftool", "wb.adf", "unpack", ".")
     os.remove(os.path.join(demo, "wb.adf"))
     for f in os.listdir(demo):

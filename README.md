@@ -116,7 +116,8 @@ The command used to start a slave, `jst` by default (looked up in `C:`).
 Cross-compiled in Docker and tested headless on an emulated A500/CDTV with the [Amiga Game Kit](https://github.com/codebase/amiga-game-kit):
 
 ```sh
-tools/check        # unit tests, build, test disk, emulator tests
+cp tools/env.example tools/env.local   # then set your own Workbench 1.3 ADF, WHDLoad games, jst, ROMs
+tools/check                            # unit tests, build, test disk, emulator tests
 ```
 
 See [AGENTS.md](AGENTS.md) for the layout, the tools and the kickstart 1.3 pitfalls.

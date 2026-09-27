@@ -4,8 +4,8 @@ with jl in C:, a test config, a large inventory and a small game tree.
 
     tools/mkdisk.py                 # after agk build (which writes build/jl)
 
-Needs your own Workbench 1.3 ADF (not in the repo): $JL_WB13_ADF, default
-/Volumes/Youen/Retro/Amiga/CDTV-HD/workbench133.adf. Runs xdftool in the
+Needs your own Workbench 1.3 ADF (not in the repo): $JL_WB13_ADF, set in
+tools/env.local (see tools/env.example). Runs xdftool in the
 kit's Docker toolchain image. The inventory uses the game names of a WHDLoad
 collection ($JL_WHDLOAD, optional) in scrambled order, like a real scan.
 """
@@ -15,9 +15,11 @@ import shutil
 import subprocess
 import tempfile
 
+import localpaths
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-WB = os.environ.get("JL_WB13_ADF", "/Volumes/Youen/Retro/Amiga/CDTV-HD/workbench133.adf")
-WHD = os.environ.get("JL_WHDLOAD", "/Volumes/Youen/Retro/LeTerrier/Amiga/WHDLOAD/GAMES")
+WB = None  # see workbench()
+WHD = localpaths.optional("JL_WHDLOAD", "")
 IMAGE = os.environ.get("AGK_TOOLCHAIN_IMAGE", "amigadev/crosstools:m68k-amigaos")
 INVENTORY_SIZE = 1200
 LAUNCHABLE = 8
@@ -73,11 +75,15 @@ def inventory_lines(path_fmt="DF0:Inv/{l}/{n}"):
     return [f"{n};{path_fmt.format(l=l, n=n)};{n}.slave\n" for l, n in names]
 
 
+def workbench():
+    return WB or localpaths.need("JL_WB13_ADF", "Workbench 1.3 ADF")
+
+
 def build_disk(out_adf, files, dirs=(), empty_files=()):
     """WB 1.3 disk minus DELETE, plus files {amiga_path: host_path or str text}."""
     work = tempfile.mkdtemp(prefix="jldisk", dir=os.path.join(ROOT, "build"))
     try:
-        shutil.copy(WB, os.path.join(work, "disk.adf"))
+        shutil.copy(workbench(), os.path.join(work, "disk.adf"))
         cmds = []
         for p in DELETE:
             cmds += ["+", "delete", p, "all"]

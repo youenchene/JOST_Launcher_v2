@@ -327,11 +327,44 @@ LONG appRun(void) {
 	loadConfig(&a->cfg);
 	storeFree(&a->store); // start from a valid empty inventory
 	while(session(a) == RUN_LAUNCH) {
-		BOOL isOk = launchSlave(a->cfg.jstCommand, a->launchPath, a->launchSlave);
+		BOOL isOk = launchSlave(a->cfg.launchMode, a->cfg.jstCommand, a->launchPath, a->launchSlave);
 		a->hasLaunchFailed = !isOk;
 		dbgKv("returned", isOk);
 		dbgEnd();
 	}
+	launchCleanup();
+	jlFree(a);
+	return RETURN_OK;
+}
+
+// ---------------------------------------------------------- SPIKE C: module
+
+LONG appRunModule(tJlShared *sh) {
+	tApp *a = jlAlloc(sizeof(*a), MEMF_ANY | MEMF_CLEAR);
+	if(!a) {
+		return RETURN_FAIL;
+	}
+	loadConfig(&a->cfg);
+	storeFree(&a->store);
+	if(sh->hasView) { // back from a game: same view, same selection
+		a->hasView = TRUE;
+		a->view.mode = (tJlViewMode)sh->viewMode;
+		a->view.folder = sh->folder;
+		a->view.nav.index = sh->index;
+	}
+	a->hasLaunchFailed = sh->launchFailed;
+	jlStrCat(a->launchSlave, sizeof(a->launchSlave), sh->launchSlave);
+	tRun r = session(a);
+	sh->action = r == RUN_LAUNCH;
+	sh->hasView = TRUE;
+	sh->viewMode = (UBYTE)a->view.mode;
+	sh->folder = a->view.folder;
+	sh->index = a->view.nav.index;
+	sh->launchMode = a->cfg.launchMode;
+	sh->launchPath[0] = sh->launchSlave[0] = sh->jstCommand[0] = '\0';
+	jlStrCat(sh->launchPath, JL_SHARED_PATH, a->launchPath);
+	jlStrCat(sh->launchSlave, JL_SHARED_NAME, a->launchSlave);
+	jlStrCat(sh->jstCommand, JL_SHARED_NAME, a->cfg.jstCommand);
 	jlFree(a);
 	return RETURN_OK;
 }

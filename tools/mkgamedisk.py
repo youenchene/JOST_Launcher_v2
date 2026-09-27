@@ -18,14 +18,14 @@ STARTUP = mkdisk.STARTUP
 CONFIG = "scan_dir_1=DF0:Games\nscan_dir_2=DH0:Games\ninventory_file=S:jl-inventory.data\n"
 
 
-def build(out, game, marker=False):
+def build(out, game, marker=False, extra_config=""):
     b = os.path.join(mkdisk.ROOT, "build")
     jst = os.path.join(b, "jst")
     with zipfile.ZipFile(JST_ZIP) as z, open(jst, "wb") as f:
         f.write(z.read("jst/bin/jst"))
     files = {"c/jl": os.path.join(b, "jl"), "c/palfix": os.path.join(b, "palfix"), "c/jst": jst,
              # marker: FS-UAE keeps floppy writes in an overlay (.sdf): proof of boot
-             "s/startup-sequence": STARTUP.replace("jl\n", "echo booted >S:booted\njl\n") if marker else STARTUP, "s/jl-config.cfg": CONFIG}
+             "s/startup-sequence": STARTUP.replace("jl\n", "echo booted >S:booted\njl\n") if marker else STARTUP, "s/jl-config.cfg": CONFIG + extra_config}
     name = os.path.basename(game.rstrip("/"))
     dirs = ["Games", f"Games/{name}"]
     for d, subdirs, fs in os.walk(game):
@@ -41,7 +41,7 @@ def build(out, game, marker=False):
 
 
 def main():
-    build(sys.argv[1], sys.argv[2])
+    build(sys.argv[1], sys.argv[2], extra_config=os.environ.get("JL_EXTRA_CONFIG", "").replace("\\n", "\n"))
 
 
 if __name__ == "__main__":

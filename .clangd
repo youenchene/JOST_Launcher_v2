@@ -1,0 +1,2 @@
+CompileFlags:
+  Add: [-Isrc, -I../src, -std=c11]

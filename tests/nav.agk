@@ -1,0 +1,23 @@
+# Up/down move one item, left/right one column (29 items), two columns a page.
+wait 2
+press up
+press down
+wait 3
+press right
+wait 10
+press right
+wait 10
+screenshot page2
+press left
+wait 10
+# held: the first step at once, then one every 4 frames (v0.x speed)
+press down 20
+wait 10
+# expect-serial checks the whole log after the run, so the order is in the regex
+expect-serial "ready\nAGK ev=move mode=0 sel=1 count=1200 page=0"
+expect-serial "sel=1 .*\n.*ev=move mode=0 sel=30 count=1200 page=0 .*\n.*sel=59 count=1200 page=58 .*\n.*sel=30 "
+expect-serial "sel=34 "
+expect-no-serial "sel=35 "
+# the move sounds are really played (from chip RAM)
+mark done
+expect-sound start done

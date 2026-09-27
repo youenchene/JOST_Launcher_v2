@@ -1,0 +1,17 @@
+# F toggles folder view; fire opens a folder, ".." goes back to it.
+wait 2
+key 0x23
+wait 30
+expect-serial "ev=folders mode=1 sel=0 count=27 page=0 label=0-9"
+press down 2
+wait 8
+press fire
+wait 20
+screenshot folder
+expect-serial "ev=open mode=2 sel=0 count=\d+ page=0 label=\.\."
+press fire
+wait 20
+expect-serial "ev=open mode=1 sel=1 count=27 page=0 label=A"
+key 0x23
+wait 30
+expect-serial "ev=folders mode=0 sel=0 count=1200"

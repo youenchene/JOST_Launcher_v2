@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+"""A playable demo for FS-UAE: a bootable Workbench 1.3 hard drive directory
+with jl, the real jst and a few real WHDLoad games, on an A500 with
+Kickstart 1.3 (512K chip + 512K slow, like a stock A500 with trapdoor RAM).
+
+    tools/mkdemo.py [--open]        # after agk build
+
+Inputs (not in the repo): $JL_WB13_ADF, $JL_WHDLOAD (see mkdisk.py),
+$JL_JST_ZIP (jst 7.1 zip), $JL_KICK13 (Kickstart 1.3 ROM).
+Output: build/demo/DH0 (the drive) and build/demo/jl-demo.fs-uae.
+"""
+import os
+import shutil
+import subprocess
+import sys
+import zipfile
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import mkdisk  # noqa: E402
+
+ROOT = mkdisk.ROOT
+JST_ZIP = os.environ.get("JL_JST_ZIP", "/Volumes/Youen/Retro/Amiga/CDTV-HD/jst_7.1.zip")
+KICK = os.environ.get("JL_KICK13", os.path.expanduser(
+    "~/Code/amiga/Kickstarts/Kickstart v1.3 rev 34.5 (1987)(Commodore)(A500-A1000-A2000-CDTV).rom"))
+GAMES = ["A/Arkanoid_v1.9_0954.lha", "B/BubbleBobble_v1.3_2518.lha", "G/GreatGianaSisters_v1.6_2945.lha",
+         "L/Lemmings_v1.5_Files_2089.lha", "P/Pang_v2.2_0929.lha", "P/PinballDreams_v1.9_0377.lha"]
+
+STARTUP = """c:SetPatch >NIL:
+c:palfix
+resident CLI L:Shell-Seg SYSTEM pure add
+resident c:Execute pure
+makedir ram:t
+assign T: ram:t
+path ram: c: add
+jl
+"""
+CONFIG = "scan_dir_1=DH0:Games\ninventory_file=S:jl-inventory.data\n"
+
+
+def docker(work, *cmd, check=True):
+    return subprocess.run(["docker", "run", "--rm", "-u", f"{os.getuid()}:{os.getgid()}", "-v", f"{work}:/w",
+                           "-w", "/w", mkdisk.IMAGE, *cmd], check=check, capture_output=True, text=True)
+
+
+def main():
+    demo = os.path.join(ROOT, "build", "demo")
+    shutil.rmtree(demo, ignore_errors=True)
+    os.makedirs(demo)
+    shutil.copy(mkdisk.WB, os.path.join(demo, "wb.adf"))
+    docker(demo, "xdftool", "wb.adf", "unpack", ".")
+    os.remove(os.path.join(demo, "wb.adf"))
+    os.rename(os.path.join(demo, "Workbench1.3"), os.path.join(demo, "DH0"))
+    dh0 = os.path.join(demo, "DH0")
+    for f in os.listdir(dh0):            # xdftool's metadata files: not for FS-UAE
+        if f.endswith(".xdfmeta"):
+            os.remove(os.path.join(dh0, f))
+    b = os.path.join(ROOT, "build")
+    for exe in ("jl", "palfix"):
+        shutil.copy(os.path.join(b, exe), os.path.join(dh0, "c", exe))
+    with zipfile.ZipFile(JST_ZIP) as z, open(os.path.join(dh0, "c", "jst"), "wb") as f:
+        f.write(z.read("jst/bin/jst"))
+    for name, text in (("startup-sequence", STARTUP), ("jl-config.cfg", CONFIG)):
+        with open(os.path.join(dh0, "s", name), "w", newline="\n") as f:
+            f.write(text)
+    games = os.path.join(dh0, "Games")
+    os.makedirs(games)
+    script = " ; ".join(f'lha xq "/whd/{g}"' for g in GAMES)  # lha exits 1 on attribute warnings
+    subprocess.run(["docker", "run", "--rm", "-u", f"{os.getuid()}:{os.getgid()}", "-v", f"{games}:/w",
+                    "-v", f"{mkdisk.WHD}:/whd:ro", "-w", "/w", mkdisk.IMAGE, "sh", "-c", script],
+                   capture_output=True, text=True)
+    got = [d for d in os.listdir(games) if os.path.isdir(os.path.join(games, d))]
+    if len(got) < len(GAMES):
+        raise SystemExit(f"only {len(got)} of {len(GAMES)} games extracted: {got}")
+    for d, _, files in os.walk(dh0):     # drop the per-file .info icons of games: less to scan
+        for f in files:
+            if f.endswith(".uaem"):
+                os.remove(os.path.join(d, f))
+    cfg = os.path.join(demo, "jl-demo.fs-uae")
+    with open(cfg, "w") as f:
+        f.write(f"""[fs-uae]
+amiga_model = A500
+chip_memory = 512
+slow_memory = 512
+kickstart_file = {KICK}
+hard_drive_0 = {dh0}
+hard_drive_0_label = DH0
+joystick_port_1 = keyboard
+""")
+    print(f"built {os.path.relpath(demo, ROOT)}: {len(GAMES)} games, config {os.path.relpath(cfg, ROOT)}")
+    if "--open" in sys.argv:
+        subprocess.Popen(["open", "-a", "FS-UAE", "--args", cfg])
+
+
+if __name__ == "__main__":
+    main()

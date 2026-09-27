@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# The whole loop: host unit tests, cross build, test disk, emulator tests.
+#   tools/check              # all tests on all profiles in agk.toml
+#   tools/check --update     # also record goldens (only for intended changes)
+#   tools/check -p cdtv      # one profile (extra args go to agk test)
+set -euo pipefail
+cd "$(dirname "$0")/.."
+AGK="${AGK:-$HOME/Code/amiga/amiga-game-kit/tools/agk}"
+"$AGK" unit
+"$AGK" build
+python3 tools/mkdisk.py
+"$AGK" test --no-build "$@"

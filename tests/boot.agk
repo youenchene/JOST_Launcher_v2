@@ -1,0 +1,8 @@
+# Workbench 1.3 boots, the startup-sequence starts jl, the list is on screen.
+wait 5
+screenshot start
+expect-serial "ev=start mode=0 sel=0 count=1200 page=0"
+expect-no-serial "returned="
+# the test inventory is scrambled, like a real scan: sorted in memory, file untouched
+expect-serial "load_bytes=\d+ .* sorted=0"
+expect-no-serial "resorted"

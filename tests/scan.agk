@@ -1,0 +1,16 @@
+# S asks to confirm, fire scans DF0:Games and shows the new, sorted list.
+wait 2
+key 0x21
+wait 30
+expect-serial "AGK scan confirm"
+press fire
+mark scanstart
+wait-serial "ev=scan" 5000
+wait 5
+screenshot scanned
+expect-serial "scanned=7"
+expect-serial "ev=scan mode=0 sel=0 count=7 page=0 label=ADIJunior"
+press down 2
+wait 8
+expect-serial "sel=1 count=7 page=0 label=ADIJunior_\(WB31_32.Slave\)"
+expect-no-serial "Hidden"

@@ -1,6 +1,6 @@
 name = "jl"
 profile = "a500"                          # default for agk run
-test_profiles = ["a500", "cdtv"]                  # Kickstart 1.3 is the target (A500 / CDTV)
+test_profiles = ["a500", "cdtv", "cdtv8"]                  # Kickstart 1.3 is the target (A500 / CDTV)
 sync = "ticks"                            # waits count launcher frames (agkTick marks them)
 boot = "AGK ready"                        # printed once the list is on screen
 unit_sources = ["src/inventory.c", "src/config.c", "src/nav.c", "src/scanfmt.c", "src/input.c", "src/view.c"]

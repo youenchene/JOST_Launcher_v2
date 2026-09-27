@@ -3,7 +3,7 @@
 with jl, the real jst and a few real WHDLoad games, on an A500 with
 Kickstart 1.3 (512K chip + 512K slow, like a stock A500 with trapdoor RAM).
 
-    tools/mkdemo.py [--open]        # after agk build
+    tools/mkdemo.py [--open] [--cdtv8]   # after agk build; --cdtv8: 1MB chip + 8MB fast
 
 Inputs (not in the repo): $JL_WB13_ADF, $JL_WHDLOAD (see mkdisk.py),
 $JL_JST_ZIP (jst 7.1 zip), $JL_KICK13 (Kickstart 1.3 ROM).
@@ -49,10 +49,13 @@ def main():
     shutil.copy(mkdisk.WB, os.path.join(demo, "wb.adf"))
     docker(demo, "xdftool", "wb.adf", "unpack", ".")
     os.remove(os.path.join(demo, "wb.adf"))
+    for f in os.listdir(demo):
+        if f.startswith("Workbench1.3."):
+            os.remove(os.path.join(demo, f))
     os.rename(os.path.join(demo, "Workbench1.3"), os.path.join(demo, "DH0"))
     dh0 = os.path.join(demo, "DH0")
     for f in os.listdir(dh0):            # xdftool's metadata files: not for FS-UAE
-        if f.endswith(".xdfmeta"):
+        if f.startswith("Workbench1.3."):
             os.remove(os.path.join(dh0, f))
     b = os.path.join(ROOT, "build")
     for exe in ("jl", "palfix"):
@@ -75,17 +78,16 @@ def main():
         for f in files:
             if f.endswith(".uaem"):
                 os.remove(os.path.join(d, f))
-    cfg = os.path.join(demo, "jl-demo.fs-uae")
-    with open(cfg, "w") as f:
-        f.write(f"""[fs-uae]
-amiga_model = A500
-chip_memory = 512
-slow_memory = 512
-kickstart_file = {KICK}
-hard_drive_0 = {dh0}
-hard_drive_0_label = DH0
-joystick_port_1 = keyboard
-""")
+    # a500: the minimum (stock A500 + trapdoor). cdtv8: your CDTV (1MB chip
+    # with the 8372A Agnus, 8MB fast).
+    configs = {"jl-demo.fs-uae": "chip_memory = 512\nslow_memory = 512\n",
+               "jl-demo-cdtv8.fs-uae": "chip_memory = 1024\nslow_memory = 0\nfast_memory = 8192\n"
+                                       "uae_chipset = ecs_agnus\n"}
+    for name, mem in configs.items():
+        with open(os.path.join(demo, name), "w") as f:
+            f.write(f"[fs-uae]\namiga_model = A500\n{mem}kickstart_file = {KICK}\n"
+                    f"hard_drive_0 = {dh0}\nhard_drive_0_label = DH0\njoystick_port_1 = keyboard\n")
+    cfg = os.path.join(demo, "jl-demo-cdtv8.fs-uae" if "--cdtv8" in sys.argv else "jl-demo.fs-uae")
     print(f"built {os.path.relpath(demo, ROOT)}: {len(GAMES)} games, config {os.path.relpath(cfg, ROOT)}")
     if "--open" in sys.argv:
         subprocess.Popen(["open", "-a", "FS-UAE", "--args", cfg])

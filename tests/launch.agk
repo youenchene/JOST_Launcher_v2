@@ -1,4 +1,5 @@
-# Fire launches (jst_command=echo on the test disk), the launcher comes back
+# Fire launches (jst_command=memreport on the test disk: a C stand-in for jst;
+# BCPL commands like 1.3's Echo can't be called without a shell), the launcher comes back
 # with the same list and the same selection (v0.x lost it: it started a 2nd
 # copy of itself on top of the first).
 wait 2
@@ -12,3 +13,5 @@ expect-serial "ev=move mode=0 sel=3 [^\n]*\nAGK launch=3DConstructionKit.slave\n
 expect-serial "returned=1\n(AGK .*\n)*AGK ev=start mode=0 sel=3 count=1200"
 # the file was rewritten in name order on launch: the 2nd start skips the sort
 expect-serial "resorted=1\n[\s\S]*returned=1\n[\s\S]*sorted=1"
+# the game starts with the menu unloaded: only the stub stays resident
+expect-serial "launch=3DConstructionKit.slave\n(AGK .*\n)*AGK chip=\d+ fast=\d+ .*mem=report"

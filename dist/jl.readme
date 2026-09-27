@@ -1,0 +1,110 @@
+Short:        JOST Launcher for kickstart 1.3
+Uploader:     youen.chene@gadz.org (Youen Chéné)
+Author:       youen.chene@gadz.org (Youen Chéné)
+Type:         util/misc
+Version:      2.0
+Architecture: m68k-amigaos >= 1.3
+Distribution: Aminet
+
+Game/Demo launcher for JOST exe to run .slave for WHDLOAD compatible
+with 1.3 kickstart.
+
+This is kind of a clone of TinyLauncher from "Master" Gibs (french will
+understand this stupid joke).
+
+The target setup for this launcher is a CDTV with 8Mo fast memory and
+BlueCDTV/BlueSCSI SD Card hard disk. It also runs on a stock A500 with
+1.3 kickstart and 512K chip + 512K slow memory.
+
+You can fully control the launcher with your CDTV Remote, mouse mode
+ or joy mode.
+
+Version 2 is a rewrite in C of the Blitz Basic version, same look:
+ - faster: the list shows in about half the time, a game starts in
+   about 2 s instead of 10 s
+ - lower memory: only 13K of the launcher stays in memory while a
+   game runs (the game gets 407K of 420K free memory on a 1Mo A500, 222K
+   with 0.3)
+ - no limit on the number of games (0.3 stopped at 255)
+
+Source : https://github.com/youenchene/JOST_Launcher
+
+# How to setup
+
+Prequisites :
+- You need `jst` in your `C:` folder. (https://github.com/jotd666/jst)
+- Kickstarts files. Legit files can be bought from Amiga Forever
+
+1. Copy `jl` and `jl-menu` executables in your `C:` folder.
+2. Change content and copy `jl-config.cfg` to `S:` folder
+3. Launch jl and launch a scan. It should add a `jl-inventory.data` in
+   your `S:` folder
+
+Launch it through CLI or add it in your startup sequence.
+
+Inventory files from 0.x still work.
+
+# How to control
+
+CDTV Remote (mouse mode or joy mode) :
+- Arrow to navigate
+- A or B button To launch
+- 0 to scan your whdload games or demo folder.
+- 1 to switch to folder mode
+
+Any joystick/joypad :
+- Arrow to navigate
+- Fire button To launch
+
+Keyboard :
+- Arrow to navigate
+- Enter button To launch
+- S to scan your whdload games or demo folder.
+- F to switch to folder mode
+- Escape to quit
+
+# jl-config.cfg setup
+
+scan_dir_1=Games:Games            mandatory, no trailing `/`
+scan_dir_2..scan_dir_4            optional, more folders to scan
+inventory_file=S:jl-inventory.data
+folder_mode_by_default=true       start in folder mode
+jst_command=jst                   command used to start a slave
+
+# Release Notes
+
+## 2.0
+ - refactor: rewrite in C (was Blitz Basic 2), same look
+ - fix: list broken and memory lost after launching a game (0.x started
+   a new copy of itself after each game)
+ - fix: games missing or out of order in the list above 255 games
+ - fix: long slave file names cut at 30 characters
+ - perf: jst is started directly, without a script or a shell
+ - perf: the menu is unloaded while a game runs (13K stays resident)
+ - perf: the inventory is saved in name order, next starts skip the
+   sort
+ - feat: selection kept when coming back from a game
+ - feat: up to 4 scan folders (`scan_dir_2` to `scan_dir_4`)
+ - feat: new optional config entry `jst_command`
+ - feat: "Could not start" message when a game can't be launched
+
+## 0.3
+ - feat: folder view mode
+ - refactor: display info
+ - feat: display current JL version
+ - feat: new optional config entry `folder_mode_by_default`
+ - fix: display refresh before and after scan
+
+## 0.2
+ - feat: Add alphabetical order on games display
+ - fix: hardcoded limit of 100 games
+ - fix: Scan on 1.3 not working on more than the 1st folder
+ - feat: new optional config entry `inventory_file`
+
+## 0.1
+ - Initial alpha version
+
+# Dev packaging
+
+Lha command :
+`lha a jl.lha jl jl-menu jl.readme jl-config.cfg`

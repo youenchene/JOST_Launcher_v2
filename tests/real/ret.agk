@@ -1,0 +1,4 @@
+wait 5
+press fire
+wait-serial "returned=" 3000
+screenshot ret

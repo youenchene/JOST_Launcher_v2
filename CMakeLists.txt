@@ -11,8 +11,11 @@ set(CMAKE_C_STANDARD 11)
 # matters more than speed (it only redraws what changed).
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Os -Wall -Wextra -fomit-frame-pointer -fno-common")
 
+# C:jl-menu: the menu module (also runs standalone)
 file(GLOB SOURCES src/*.c)
-add_executable(jl ${SOURCES})
+add_executable(jl-menu ${SOURCES})
+# C:jl: the resident stub the user runs (loads jl-menu, launches jst)
+add_executable(jl src/stub/stub.c src/launch.c src/sys.c src/dbg.c)
 
 # Test-disk helper (tools/mkdisk.py puts it in C: of the test disk only)
 add_executable(palfix tests/tools/palfix.c)

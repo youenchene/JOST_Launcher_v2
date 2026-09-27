@@ -20,6 +20,7 @@ WB = os.environ.get("JL_WB13_ADF", "/Volumes/Youen/Retro/Amiga/CDTV-HD/workbench
 WHD = os.environ.get("JL_WHDLOAD", "/Volumes/Youen/Retro/LeTerrier/Amiga/WHDLOAD/GAMES")
 IMAGE = os.environ.get("AGK_TOOLCHAIN_IMAGE", "amigadev/crosstools:m68k-amigaos")
 INVENTORY_SIZE = 1200
+LAUNCHABLE = 8
 
 # Room for the test files: what a launcher disk doesn't need.
 DELETE = ["s/startup-sequence", "Utilities", "Utilities.info", "Expansion", "Expansion.info", "Trashcan",
@@ -54,11 +55,11 @@ jl
 
 CONFIG = """scan_dir_1=DF0:Games
 inventory_file=S:jl-inventory.data
-jst_command=echo
+jst_command=memreport
 """
 
 
-def inventory_lines(path_fmt="DF0:Games/{l}/{n}"):
+def inventory_lines(path_fmt="DF0:Inv/{l}/{n}"):
     names = []
     if os.path.isdir(WHD):
         for letter in sorted(os.listdir(WHD)):
@@ -118,10 +119,16 @@ def tree_dirs(paths):
 
 def main():
     b = os.path.join(ROOT, "build")
-    files = {"c/jl": os.path.join(b, "jl"), "c/palfix": os.path.join(b, "palfix"),
+    files = {"c/jl": os.path.join(b, "jl"), "c/jl-menu": os.path.join(b, "jl-menu"), "c/palfix": os.path.join(b, "palfix"),
+             "c/memreport": os.path.join(b, "memreport"),
              "s/startup-sequence": STARTUP, "s/jl-config.cfg": CONFIG,
              "s/jl-inventory.data": "".join(inventory_lines())}
-    build_disk(os.path.join(b, "jl.adf"), files, tree_dirs(GAME_TREE), GAME_TREE)
+    # Launching needs the game's folder: create it for the first games in
+    # name order (tests/launch.agk). Inv/ is outside the scan dir (DF0:Games).
+    lines = files["s/jl-inventory.data"].splitlines()
+    first = sorted(lines, key=lambda l: (l.split(";")[0].lower(), l.split(";")[0]))[:LAUNCHABLE]
+    inv_dirs = [l.split(";")[1].split(":", 1)[1] + "/x" for l in first]
+    build_disk(os.path.join(b, "jl.adf"), files, tree_dirs(GAME_TREE) + tree_dirs(inv_dirs), GAME_TREE)
     print(f"built build/jl.adf (WB 1.3, {INVENTORY_SIZE} inventory lines, {len(GAME_TREE)} test files)")
 
 

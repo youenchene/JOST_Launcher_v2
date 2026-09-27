@@ -1,6 +1,6 @@
-// SPIKE C: what the resident stub (src/stub/stub.c) and the menu module (jl,
-// loaded with "jlshared=<address>") share across a game: the selection and
-// what to launch. The menu is unloaded while the game runs.
+// What the resident stub (src/stub/stub.c, C:jl) and the menu module
+// (C:jl-menu, loaded with "jl=<address>") share across a game: the selection
+// and what to launch. The menu is unloaded while the game runs.
 #ifndef JL_SHARED_H
 #define JL_SHARED_H
 
@@ -12,7 +12,7 @@
 
 typedef struct {
 	ULONG magic;
-	UBYTE hasView, viewMode, launchFailed, launchMode;
+	UBYTE hasView, viewMode, launchFailed, pad;
 	UWORD folder, index;
 	UBYTE action;                    // 0 quit, 1 launch
 	char launchPath[JL_SHARED_PATH];

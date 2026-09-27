@@ -17,7 +17,6 @@ typedef struct {
 	char inventoryFile[JL_CFG_STR];
 	char jstCommand[JL_CFG_STR];
 	uint8_t folderModeByDefault;
-	uint8_t launchMode;   // SPIKE: 0 script (v0.x way), 1 execute, 2 loadseg
 } tJlConfig;
 
 void jlConfigDefaults(tJlConfig *cfg);

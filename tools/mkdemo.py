@@ -62,7 +62,7 @@ def main():
         if f.startswith("Workbench1.3."):
             os.remove(os.path.join(dh0, f))
     b = os.path.join(ROOT, "build")
-    for exe in ("jl", "palfix"):
+    for exe in ("jl", "jl-menu", "palfix"):
         shutil.copy(os.path.join(b, exe), os.path.join(dh0, "c", exe))
     with zipfile.ZipFile(JST_ZIP) as z, open(os.path.join(dh0, "c", "jst"), "wb") as f:
         f.write(z.read("jst/bin/jst"))

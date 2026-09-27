@@ -1,19 +1,20 @@
-// Starts a slave through jst and returns when it quits. The launcher has
-// already closed its screen and freed its lists, so the game gets all the
-// memory but our code.
+// Starts a slave through jst and returns when it quits (Kickstart 1.3).
 //
-// SPIKE: three ways (config launch_mode), measured by tools/bench.py:
-//   0 script:  write RAM:jl-launch ("cd" + "jst"), Execute("execute ...")
-//   1 execute: CurrentDir() ourselves, Execute("jst \"slave\"")
-//   2 loadseg: CurrentDir(), LoadSeg(jst) once, call it on its own stack
+// jst is loaded with LoadSeg() and called directly, the way the 1.3 shell
+// runs a command: no shell, no script file, no C:Execute. It's loaded for
+// each launch (jst isn't reentrant: its variables would survive into the
+// next game) and gets a 4K stack, like the shell's default. If LoadSeg
+// fails (e.g. jst isn't in C:), Execute() through a shell is the fallback.
 #ifndef JL_LAUNCH_H
 #define JL_LAUNCH_H
 
 #include <exec/types.h>
 
-#define LAUNCH_SCRIPT "RAM:jl-launch"
+BOOL launchSlave(const char *jstCommand, const char *path, const char *slave);
 
-BOOL launchSlave(UBYTE mode, const char *jstCommand, const char *path, const char *slave);
-void launchCleanup(void);   // frees a cached jst (mode 2)
+// Calls a loaded command's first hunk on a new stack (stackTop: the stack's
+// last longword, which holds its size, as the 1.3 shell sets it up).
+// d0/a0 = argument line. Returns the command's d0.
+LONG jlCallSeg(APTR entry, const char *args, LONG len, APTR stackTop);
 
 #endif

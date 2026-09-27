@@ -1,5 +1,4 @@
 #include "launch.h"
-#include "dbg.h"
 #include "sys.h"
 #include <dos/dos.h>
 #include <dos/dosextens.h>
@@ -7,68 +6,9 @@
 #include <proto/dos.h>
 #include <proto/exec.h>
 
-#define SCRIPT_MAX 600
-#define JST_STACK 16384
+#define ARGS_MAX 400
+#define JST_STACK 4096   // the 1.3 shell's default stack
 
-// ------------------------------------------------------------ helpers
-
-static UWORD addQuoted(char *dst, UWORD cap, const char *prefix, const char *arg) {
-	if(prefix) {
-		jlStrCat(dst, cap, prefix);
-		jlStrCat(dst, cap, " ");
-	}
-	jlStrCat(dst, cap, "\"");
-	jlStrCat(dst, cap, arg);
-	return jlStrCat(dst, cap, "\"\n");
-}
-
-static BPTR consoleOut(BPTR *nil) {
-	BPTR out = Output();
-	*nil = 0;
-	if(!out) { // started from Workbench: no console
-		out = *nil = Open((STRPTR)"NIL:", MODE_NEWFILE);
-	}
-	return out;
-}
-
-// ------------------------------------------------------------ 0: script
-
-static BOOL launchScript(const char *jst, const char *path, const char *slave) {
-	char text[SCRIPT_MAX];
-	text[0] = '\0';
-	addQuoted(text, SCRIPT_MAX, "cd", path);
-	UWORD len = addQuoted(text, SCRIPT_MAX, jst, slave);
-	BPTR fh = Open((STRPTR)LAUNCH_SCRIPT, MODE_NEWFILE);
-	if(!fh) {
-		return FALSE;
-	}
-	BOOL isOk = Write(fh, text, len) == len;
-	Close(fh);
-	BPTR nil, out = consoleOut(&nil);
-	isOk = isOk && Execute((STRPTR)"execute " LAUNCH_SCRIPT, 0, out) != 0;
-	if(nil) Close(nil);
-	return isOk;
-}
-
-// ------------------------------------------------------------ 1: execute
-
-static BOOL launchExecute(const char *jst, const char *slave) {
-	char cmd[SCRIPT_MAX];
-	cmd[0] = '\0';
-	UWORD len = addQuoted(cmd, SCRIPT_MAX, jst, slave);
-	cmd[len - 1] = '\0'; // Execute takes one line, no newline
-	BPTR nil, out = consoleOut(&nil);
-	BOOL isOk = Execute((STRPTR)cmd, 0, out) != 0;
-	if(nil) Close(nil);
-	return isOk;
-}
-
-// ------------------------------------------------------------ 2: loadseg
-
-// Calls a loaded command like the 1.3 shell does: d0/a0 = argument line
-// (ending in '\n'), on a fresh stack (the shell's default is 4K; ours is
-// what's left of jl's). RunCommand() would do this, but it's V36+.
-LONG jlCallSeg(APTR entry, const char *args, LONG len, APTR stackTop);
 __asm__(
 	"	.text\n"
 	"	.even\n"
@@ -87,90 +27,98 @@ __asm__(
 	"	rts\n"
 );
 
-static BPTR s_jstSeg;
-
-static BPTR loadJst(const char *jst) {
-	if(s_jstSeg) {
-		return s_jstSeg;
-	}
-	char name[120];
-	name[0] = '\0';
-	BOOL hasPath = FALSE;
-	for(const char *c = jst; *c; ++c) hasPath |= (*c == ':' || *c == '/');
-	if(!hasPath) jlStrCat(name, sizeof(name), "C:");
-	jlStrCat(name, sizeof(name), jst);
-	s_jstSeg = LoadSeg((STRPTR)name);
-	return s_jstSeg;
+// "\"slave\"\n" (the line a command gets); returns its length.
+static UWORD argLine(char *dst, const char *slave) {
+	dst[0] = '\0';
+	jlStrCat(dst, ARGS_MAX, "\"");
+	jlStrCat(dst, ARGS_MAX, slave);
+	return jlStrCat(dst, ARGS_MAX, "\"\n");
 }
 
-static BOOL launchSeg(const char *jst, const char *slave) {
-	BPTR seg = loadJst(jst);
-	UBYTE *stack = seg ? AllocMem(JST_STACK, MEMF_ANY) : NULL;
-	if(!stack) {
+static BPTR loadCommand(const char *cmd) {
+	char name[120];
+	BOOL hasPath = FALSE;
+	for(const char *c = cmd; *c; ++c) hasPath |= (*c == ':' || *c == '/');
+	name[0] = '\0';
+	if(!hasPath) jlStrCat(name, sizeof(name), "C:");
+	jlStrCat(name, sizeof(name), cmd);
+	return LoadSeg((STRPTR)name);
+}
+
+// Sets the process up like the 1.3 shell does for a command, then calls it.
+// BCPL-style commands (jst on 1.3: RdArgs) read the argument line from the
+// current input stream's buffer, where the shell leaves it: we fake that with
+// a NIL: handle whose buffer holds the line, as pr_CIS during the call.
+static BOOL callCommand(BPTR seg, const char *cmd, const char *args, UWORD len) {
+	static ULONG s_argBuf[ARGS_MAX / 4 + 1];   // BPTR targets: longword aligned
+	static ULONG s_name[16];
+	UBYTE *stack = AllocMem(JST_STACK, MEMF_ANY);
+	BPTR nilIn = stack ? Open((STRPTR)"NIL:", MODE_OLDFILE) : 0;
+	if(!nilIn) {
+		if(stack) FreeMem(stack, JST_STACK);
 		return FALSE;
 	}
-	char args[SCRIPT_MAX];
-	args[0] = '\0';
-	UWORD len = addQuoted(args, SCRIPT_MAX, NULL, slave);
 	struct Process *me = (struct Process *)FindTask(NULL);
 	struct CommandLineInterface *cli = BADDR(me->pr_CLI);
-	BSTR oldName = 0;
-	static ULONG s_bname[16];         // BSTR: longword aligned
-	UBYTE *bname = (UBYTE *)s_bname;
-	if(cli) { // some commands read their name from the CLI
-		UBYTE n = 0;
-		while(jst[n] && n < 62) { bname[n + 1] = (UBYTE)jst[n]; ++n; }
-		bname[0] = n;
-		oldName = cli->cli_CommandName;
-		cli->cli_CommandName = MKBADDR(bname); // needs longword alignment
-	}
-	// BCPL commands (jst on 1.3: RdArgs) read the argument line from the
-	// current input stream's buffer, where the shell leaves it. Fake that:
-	// a NIL: handle whose buffer holds the line, as pr_CIS during the call.
-	static ULONG s_argBuf[SCRIPT_MAX / 4 + 1];   // BPTR target: longword aligned
-	CopyMem(args, s_argBuf, len);
-	BPTR nilIn = Open((STRPTR)"NIL:", MODE_OLDFILE);
 	struct FileHandle *fh = BADDR(nilIn);
+	CopyMem((APTR)args, s_argBuf, len);
+	fh->fh_Buf = MKBADDR(s_argBuf);
+	fh->fh_Pos = 0;
+	fh->fh_End = len;
 	BPTR oldCis = me->pr_CIS;
-	if(fh) {
-		fh->fh_Buf = MKBADDR(s_argBuf);
-		fh->fh_Pos = 0;
-		fh->fh_End = len;
-		me->pr_CIS = nilIn;
+	me->pr_CIS = nilIn;
+	BSTR oldName = 0;
+	if(cli) { // some commands read their name from the CLI
+		UBYTE *b = (UBYTE *)s_name, n = 0;
+		while(cmd[n] && n < 62) { b[n + 1] = (UBYTE)cmd[n]; ++n; }
+		b[0] = n;
+		oldName = cli->cli_CommandName;
+		cli->cli_CommandName = MKBADDR(s_name);
 	}
-	APTR entry = (APTR)(((ULONG)seg << 2) + 4);
-	*(ULONG *)(stack + JST_STACK - 4) = JST_STACK; // 1.3 shell layout: size at the top
-	jlCallSeg(entry, args, len, stack + JST_STACK - 4);
-	me->pr_CIS = oldCis;
-	if(fh) {
-		fh->fh_Buf = 0; // ours: Close() must not free it
-		fh->fh_Pos = fh->fh_End = 0;
-		Close(nilIn);
-	}
+	*(ULONG *)(stack + JST_STACK - 4) = JST_STACK;
+	jlCallSeg((APTR)(((ULONG)seg << 2) + 4), args, len, stack + JST_STACK - 4);
 	if(cli) cli->cli_CommandName = oldName;
+	me->pr_CIS = oldCis;
+	fh->fh_Buf = 0; // ours: Close() must not free it
+	fh->fh_Pos = fh->fh_End = 0;
+	Close(nilIn);
 	FreeMem(stack, JST_STACK);
 	return TRUE;
 }
 
-void launchCleanup(void) {
-	if(s_jstSeg) {
-		UnLoadSeg(s_jstSeg);
-		s_jstSeg = 0;
+static BOOL executeCommand(const char *cmd, const char *args) {
+	char line[ARGS_MAX + 120];
+	line[0] = '\0';
+	jlStrCat(line, sizeof(line), cmd);
+	jlStrCat(line, sizeof(line), " ");
+	UWORD n = jlStrCat(line, sizeof(line), args);
+	if(n && line[n - 1] == '\n') line[n - 1] = '\0'; // Execute takes one line
+	BPTR out = Output(), nil = 0;
+	if(!out) { // started from Workbench: no console
+		out = nil = Open((STRPTR)"NIL:", MODE_NEWFILE);
 	}
+	BOOL isOk = Execute((STRPTR)line, 0, out) != 0;
+	if(nil) Close(nil);
+	return isOk;
 }
 
-// ------------------------------------------------------------ entry
-
-BOOL launchSlave(UBYTE mode, const char *jst, const char *path, const char *slave) {
-	if(mode == 0) {
-		return launchScript(jst, path, slave);
-	}
+BOOL launchSlave(const char *cmd, const char *path, const char *slave) {
 	BPTR dir = Lock((STRPTR)path, ACCESS_READ);
 	if(!dir) {
 		return FALSE;
 	}
+	char args[ARGS_MAX];
+	UWORD len = argLine(args, slave);
 	BPTR old = CurrentDir(dir);
-	BOOL isOk = mode == 1 ? launchExecute(jst, slave) : launchSeg(jst, slave);
+	BPTR seg = loadCommand(cmd);
+	BOOL isOk;
+	if(seg) {
+		isOk = callCommand(seg, cmd, args, len);
+		UnLoadSeg(seg);
+	}
+	else {
+		isOk = executeCommand(cmd, args); // not in C:, or a shell alias/script
+	}
 	CurrentDir(old);
 	UnLock(dir);
 	return isOk;

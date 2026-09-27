@@ -23,7 +23,7 @@ def build(out, game, marker=False, extra_config=""):
     jst = os.path.join(b, "jst")
     with zipfile.ZipFile(JST_ZIP) as z, open(jst, "wb") as f:
         f.write(z.read("jst/bin/jst"))
-    files = {"c/jl": os.path.join(b, "jl"), "c/palfix": os.path.join(b, "palfix"), "c/jst": jst,
+    files = {"c/jl": os.path.join(b, "jl"), "c/jl-menu": os.path.join(b, "jl-menu"), "c/palfix": os.path.join(b, "palfix"), "c/jst": jst,
              # marker: FS-UAE keeps floppy writes in an overlay (.sdf): proof of boot
              "s/startup-sequence": STARTUP.replace("jl\n", "echo booted >S:booted\njl\n") if marker else STARTUP, "s/jl-config.cfg": CONFIG + extra_config}
     name = os.path.basename(game.rstrip("/"))

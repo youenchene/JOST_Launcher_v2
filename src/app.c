@@ -327,17 +327,16 @@ LONG appRun(void) {
 	loadConfig(&a->cfg);
 	storeFree(&a->store); // start from a valid empty inventory
 	while(session(a) == RUN_LAUNCH) {
-		BOOL isOk = launchSlave(a->cfg.launchMode, a->cfg.jstCommand, a->launchPath, a->launchSlave);
+		BOOL isOk = launchSlave(a->cfg.jstCommand, a->launchPath, a->launchSlave);
 		a->hasLaunchFailed = !isOk;
 		dbgKv("returned", isOk);
 		dbgEnd();
 	}
-	launchCleanup();
 	jlFree(a);
 	return RETURN_OK;
 }
 
-// ---------------------------------------------------------- SPIKE C: module
+// ------------------------------------------------------- module (C:jl-menu)
 
 LONG appRunModule(tJlShared *sh) {
 	tApp *a = jlAlloc(sizeof(*a), MEMF_ANY | MEMF_CLEAR);
@@ -360,7 +359,6 @@ LONG appRunModule(tJlShared *sh) {
 	sh->viewMode = (UBYTE)a->view.mode;
 	sh->folder = a->view.folder;
 	sh->index = a->view.nav.index;
-	sh->launchMode = a->cfg.launchMode;
 	sh->launchPath[0] = sh->launchSlave[0] = sh->jstCommand[0] = '\0';
 	jlStrCat(sh->launchPath, JL_SHARED_PATH, a->launchPath);
 	jlStrCat(sh->launchSlave, JL_SHARED_NAME, a->launchSlave);

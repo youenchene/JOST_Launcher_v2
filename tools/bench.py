@@ -61,7 +61,7 @@ def sorted_lines(lines):
     return sorted(lines, key=lambda l: (l.split(";")[0].lower(), l.split(";")[0]))
 
 
-def run(name, exe, n, profile, config=CONFIG, stub=None):
+def run(name, exe, n, profile, config=CONFIG, menu=None):
     proj = os.path.join(ROOT, "bench", name)
     os.makedirs(os.path.join(proj, "build"), exist_ok=True)
     with open(os.path.join(proj, "agk.toml"), "w") as f:
@@ -71,9 +71,8 @@ def run(name, exe, n, profile, config=CONFIG, stub=None):
     files = {"c/jl": exe, "c/palfix": os.path.join(b, "palfix"), "c/jst": os.path.join(b, "memreport"),
              "s/startup-sequence": STARTUP, "s/jl-config.cfg": config,
              "s/jl-inventory.data": "".join(sorted_lines(mkdisk.inventory_lines("DF0:s")))}
-    if stub:  # SPIKE C: the stub is started, jl is its menu module
-        files["c/jlstub"] = stub
-        files["s/startup-sequence"] = STARTUP.replace("jl\n", "jlstub\n")
+    if menu:  # v2: C:jl is the stub, C:jl-menu the menu it loads
+        files["c/jl-menu"] = menu
     mkdisk.build_disk(os.path.join(proj, "build", f"{name}.adf"), files)
     sc = os.path.join(proj, "bench.agk")
     with open(sc, "w") as f:
@@ -109,20 +108,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("-n", type=int, default=250, help="inventory lines (v0.3 holds at most 255)")
     ap.add_argument("-p", default="a500")
-    ap.add_argument("--modes", help="v2 launch modes only, e.g. 0,1,2 (spike)")
-    ap.add_argument("--stub", action="store_true", help="spike C: resident stub + menu module")
     a = ap.parse_args()
-    if a.stub:
-        b = os.path.join(ROOT, "build")
-        report("v2 stub + module", run("v2stub", os.path.join(b, "jl"), a.n, a.p, CONFIG, os.path.join(b, "jlstub")))
-        return
-    if a.modes:
-        for m in a.modes.split(","):
-            report(f"v2 launch_mode={m}", run(f"v2m{m}", os.path.join(ROOT, "build", "jl"), a.n, a.p,
-                                            CONFIG + f"launch_mode={m}\n"))
-        return
-    for name, exe in (("v0", V0), ("v2", os.path.join(ROOT, "build", "jl"))):
-        report(name, run(name, exe, a.n, a.p))
+    b = os.path.join(ROOT, "build")
+    report("v0", run("v0", V0, a.n, a.p))
+    report("v2", run("v2", os.path.join(b, "jl"), a.n, a.p, menu=os.path.join(b, "jl-menu")))
 
 
 if __name__ == "__main__":

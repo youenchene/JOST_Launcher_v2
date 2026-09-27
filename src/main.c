@@ -1,8 +1,8 @@
-// JOST Launcher v2: a TinyLauncher-style menu for WHDLoad slaves started
-// with jst, for Kickstart 1.3 (A500 / CDTV). See AGENTS.md.
+// C:jl-menu, the menu of JOST Launcher v2. Normally loaded by the stub (C:jl,
+// src/stub/stub.c) with "jl=<address of a tJlShared>"; also runs standalone.
 #include "app.h"
 
-static const char s_szVersion[] __attribute__((used)) = "$VER: jl " JL_VERSION " (2026)";
+static const char s_szVersion[] __attribute__((used)) = "$VER: jl-menu " JL_VERSION " (2026)";
 
 static ULONG parseHex(const char *s) {
 	ULONG v = 0;
@@ -14,7 +14,7 @@ static ULONG parseHex(const char *s) {
 }
 
 int main(int argc, char **argv) {
-	// SPIKE C: loaded by the stub as a module
+	// loaded by the stub
 	if(argc > 1 && argv[1][0] == 'j' && argv[1][1] == 'l' && argv[1][2] == '=') {
 		tJlShared *sh = (tJlShared *)parseHex(argv[1] + 3);
 		if(sh->magic == JL_SHARED_MAGIC) {

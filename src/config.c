@@ -46,9 +46,6 @@ static void applyLine(tJlConfig *cfg, const char *line, uint32_t len) {
 	else if(keyIs(line, eq, "jst_command") && vlen) {
 		copyField(cfg->jstCommand, v, vlen);
 	}
-	else if(keyIs(line, eq, "launch_mode") && vlen) {
-		cfg->launchMode = (uint8_t)(v[0] - '0');
-	}
 	else if(keyIs(line, eq, "folder_mode_by_default")) {
 		cfg->folderModeByDefault = (uint8_t)isTrue(v, vlen);
 	}
@@ -60,7 +57,6 @@ void jlConfigDefaults(tJlConfig *cfg) {
 	copyField(cfg->inventoryFile, "S:jl-inventory.data", 19);
 	copyField(cfg->jstCommand, "jst", 3);
 	cfg->folderModeByDefault = 0;
-	cfg->launchMode = 0;
 }
 
 void jlConfigParse(tJlConfig *cfg, const char *text, uint32_t len) {

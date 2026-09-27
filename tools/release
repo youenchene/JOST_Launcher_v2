@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Builds the release package without the Amiga Game Kit: host unit tests,
+# then jl + jl-menu cross-compiled in the kit's Docker toolchain image,
+# stripped, and packed with the readme and a sample config.
+#   tools/release            -> build/release/jl.lha (+ the loose files)
+# Used by .github/workflows/release.yml.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+IMAGE="${AGK_TOOLCHAIN_IMAGE:-amigadev/crosstools:m68k-amigaos}"
+CC="${CC:-cc}"
+
+# Portable rules: the same unit tests as agk unit
+mkdir -p build/unit
+UNIT_SOURCES=$(sed -n 's/^unit_sources *= *\[\(.*\)\].*/\1/p' agk.toml | tr -d '",')
+"$CC" -std=c11 -Wall -Wextra -g -fsanitize=address,undefined -I src $UNIT_SOURCES \
+  tests/unit/core_test.c -o build/unit/core_test
+build/unit/core_test && echo "unit tests passed"
+
+OUT=build/release
+rm -rf "$OUT" build/release-cmake
+mkdir -p "$OUT"
+docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/project" -w /project "$IMAGE" sh -euc "
+  cmake -S . -B build/release-cmake -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_TOOLCHAIN_FILE=/opt/m68k-amigaos/lib/m68k-amigaos.cmake \
+    -DM68K_CPU=68000 -DM68K_FPU=soft -DM68K_CRT=nix13 >/dev/null
+  cmake --build build/release-cmake -j --target jl jl-menu
+  for exe in jl jl-menu; do m68k-amigaos-strip -o $OUT/\$exe build/release-cmake/\$exe; done
+  cp dist/jl.readme dist/jl-config.cfg $OUT/
+  cd $OUT && lha aq jl.lha jl jl-menu jl.readme jl-config.cfg
+"
+ls -l "$OUT"

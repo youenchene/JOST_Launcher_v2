@@ -32,17 +32,32 @@ Measured on an emulated A500 (kickstart 1.3, 512K chip + 512K slow, 420K free fa
 - jst is started directly, without a script or a shell.
 - Inventory files from 0.x still work.
 
-## How to setup
+## How to install
 
 Prequisites :
+- Kickstart 1.3 (A500, CDTV...). Legit Kickstart files can be bought from [Amiga Forever](https://www.amigaforever.com/)
 - You need `jst` in your `C:` folder. [Download](https://github.com/jotd666/jst)
-- Kickstarts files. Legit files can be bought from [Amiga Forever](https://www.amigaforever.com/)
+- Your WHDLoad games installed in a folder, e.g. `Games:Games`, unpacked (jst can't read XPK packed files)
 
-1. Copy the `jl` and `jl-menu` executables in your `C:` folder.
-2. Change content and copy `jl-config.cfg` to `S:` folder
-3. Launch jl and launch a scan. It should add a `jl-inventory.data` in your `S:` folder
+1. Download `jl.lha` from the [latest release](https://github.com/youenchene/JOST_Launcher_v2/releases/latest)
+   (the loose files are there too).
+2. Unpack it on your Amiga: `lha x jl.lha`
+3. Copy the two executables to `C:`, both are needed:
+   ```
+   copy jl C:
+   copy jl-menu C:
+   ```
+4. Set `scan_dir_1` in `jl-config.cfg` to your games folder (see below), and copy it to `S:`:
+   ```
+   copy jl-config.cfg S:
+   ```
+5. Run `jl`, press S (or 0 on the remote) then Enter to scan. The list is saved in
+   `S:jl-inventory.data`, so the next starts don't need a scan.
 
-Launch it through CLI or add it in your startup sequence.
+Launch it through CLI or add `jl` at the end of your `S:startup-sequence`.
+
+**Upgrading from 0.x:** replace `C:jl` with the new one and add `C:jl-menu`. Your
+`S:jl-config.cfg` and `S:jl-inventory.data` still work.
 
 ## How to control
 
@@ -151,7 +166,12 @@ See [AGENTS.md](AGENTS.md) for the layout, the tools and the kickstart 1.3 pitfa
 
 Older versions: see the [0.x project](https://github.com/youenchene/JOST_Launcher#release-notes).
 
-## Dev packaging
+## Release
 
-Lha command :
-`lha a jl.lha jl jl-menu jl.readme jl-config.cfg` (from `build/` and `dist/`)
+`tools/release` builds `build/release/jl.lha` (unit tests, cross-compile in Docker,
+strip, pack). It doesn't need the Amiga Game Kit. The [release workflow](.github/workflows/release.yml)
+runs it on every push, and publishes a GitHub release when a version tag is pushed:
+
+1. Update the version in `src/app.h` (`JL_VERSION`), `src/stub/stub.c` (`$VER`) and
+   `dist/jl.readme` (`Version:` and a `## X.Y` release notes section).
+2. `git tag v2.1 && git push origin v2.1`

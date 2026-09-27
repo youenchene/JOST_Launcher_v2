@@ -127,6 +127,7 @@ checkout:
 ## Release
 
 Update the version in `src/app.h` (`JL_VERSION`), `src/stub/stub.c` (`$VER`)
-and the release notes in `dist/jl.readme`, then:
-
-`lha a jl.lha jl jl-menu jl.readme jl-config.cfg`
+and `dist/jl.readme` (`Version:` and a `## X.Y` section: it becomes the release
+notes), then push a tag `vX.Y`. `.github/workflows/release.yml` runs
+`tools/release` (no kit needed) and publishes `jl.lha`, `jl`, `jl-menu`,
+`jl.readme` and `jl-config.cfg`. It fails if the tag and the versions differ.

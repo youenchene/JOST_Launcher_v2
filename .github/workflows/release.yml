@@ -1,0 +1,47 @@
+# Builds jl + jl-menu on every push. On a tag vX.Y, publishes a GitHub release
+# with jl.lha, the two binaries, jl.readme and jl-config.cfg. Release notes
+# are the "## X.Y" section of dist/jl.readme.
+name: release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build (unit tests, cross-compile, package)
+        run: tools/release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jl
+          path: build/release/
+
+      - name: Check the version matches the tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          grep -q "^#define JL_VERSION \"$v\"" src/app.h || { echo "src/app.h JL_VERSION is not $v"; exit 1; }
+          grep -q "^Version: *$v$" dist/jl.readme || { echo "dist/jl.readme Version is not $v"; exit 1; }
+
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          awk -v h="## $v" '$0 == h {on=1; next} on && /^## / {exit} on && /^# / {exit} on' dist/jl.readme > build/notes.md
+          printf '\nInstall: copy `jl` and `jl-menu` to `C:` and `jl-config.cfg` to `S:` (see README).\n' >> build/notes.md
+          cd build/release
+          gh release create "$GITHUB_REF_NAME" --title "JOST Launcher $v" --notes-file ../notes.md \
+            jl.lha jl jl-menu jl.readme jl-config.cfg

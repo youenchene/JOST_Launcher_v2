@@ -104,7 +104,6 @@ jst_command=jst                   command used to start a slave
 ## 0.1
  - Initial alpha version
 
-# Dev packaging
+# Download
 
-Lha command :
-`lha a jl.lha jl jl-menu jl.readme jl-config.cfg`
+https://github.com/youenchene/JOST_Launcher_v2/releases/latest

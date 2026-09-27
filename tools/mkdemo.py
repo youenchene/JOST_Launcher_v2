@@ -81,7 +81,7 @@ def main():
     # Boot floppy (tested headless: tests/real): FS-UAE doesn't boot Kickstart
     # 1.3 from a directory drive, so df0 boots jl + jst + Bubble Bobble.
     from mkgamedisk import build
-    build(os.path.join(demo, "boot.adf"), os.path.join(games, "BubbleBobble"))
+    build(os.path.join(demo, "boot.adf"), os.path.join(games, "BubbleBobble"), marker=True)
     for d, _, files in os.walk(dh0):     # drop the per-file .info icons of games: less to scan
         for f in files:
             if f.endswith(".uaem"):
@@ -92,7 +92,9 @@ def main():
                "jl-demo-cdtv8.fs-uae": "chip_memory = 1024\nslow_memory = 0\nfast_memory = 8192\n"
                                        "uae_chipset = ecs_agnus\n"}
     configs["jl-demo-cdtv.fs-uae"] = (f"amiga_model = CDTV\nkickstart_ext_file = {CDTV_EXT}\n"
-                                      "chip_memory = 1024\nfast_memory = 8192\n")
+                                      "chip_memory = 1024\nfast_memory = 8192\n"
+                                      "uae_floppy0type = 0\n"   # the CDTV preset has no DF0
+                                      f"uae_floppy0 = {os.path.join(demo, 'boot.adf')}\n")
     for name, mem in configs.items():
         model = "" if "amiga_model" in mem else "amiga_model = A500\n"
         with open(os.path.join(demo, name), "w") as f:

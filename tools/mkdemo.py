@@ -3,7 +3,8 @@
 with jl, the real jst and a few real WHDLoad games, on an A500 with
 Kickstart 1.3 (512K chip + 512K slow, like a stock A500 with trapdoor RAM).
 
-    tools/mkdemo.py [--open] [--cdtv8]   # after agk build; --cdtv8: 1MB chip + 8MB fast
+    tools/mkdemo.py [--open] [--cdtv8|--cdtv]   # --cdtv8: A500 1MB chip + 8MB fast;
+                                            # --cdtv: FS-UAE's CDTV model + CDTV ext ROM
 
 Inputs (not in the repo): $JL_WB13_ADF, $JL_WHDLOAD (see mkdisk.py),
 $JL_JST_ZIP (jst 7.1 zip), $JL_KICK13 (Kickstart 1.3 ROM).
@@ -20,6 +21,8 @@ import mkdisk  # noqa: E402
 
 ROOT = mkdisk.ROOT
 JST_ZIP = os.environ.get("JL_JST_ZIP", "/Volumes/Youen/Retro/Amiga/CDTV-HD/jst_7.1.zip")
+CDTV_EXT = os.environ.get("JL_CDTV_EXT", os.path.expanduser(
+    "~/Code/amiga/Kickstarts/CDTV Extended-ROM v1.0 (1991)(Commodore)(CDTV)[!].rom"))
 KICK = os.environ.get("JL_KICK13", os.path.expanduser(
     "~/Code/amiga/Kickstarts/Kickstart v1.3 rev 34.5 (1987)(Commodore)(A500-A1000-A2000-CDTV).rom"))
 GAMES = ["A/Arkanoid_v1.9_0954.lha", "B/BubbleBobble_v1.3_2518.lha", "G/GreatGianaSisters_v1.6_2945.lha",
@@ -83,11 +86,15 @@ def main():
     configs = {"jl-demo.fs-uae": "chip_memory = 512\nslow_memory = 512\n",
                "jl-demo-cdtv8.fs-uae": "chip_memory = 1024\nslow_memory = 0\nfast_memory = 8192\n"
                                        "uae_chipset = ecs_agnus\n"}
+    configs["jl-demo-cdtv.fs-uae"] = (f"amiga_model = CDTV\nkickstart_ext_file = {CDTV_EXT}\n"
+                                      "chip_memory = 1024\nfast_memory = 8192\n")
     for name, mem in configs.items():
+        model = "" if "amiga_model" in mem else "amiga_model = A500\n"
         with open(os.path.join(demo, name), "w") as f:
-            f.write(f"[fs-uae]\namiga_model = A500\n{mem}kickstart_file = {KICK}\n"
+            f.write(f"[fs-uae]\n{model}{mem}kickstart_file = {KICK}\n"
                     f"hard_drive_0 = {dh0}\nhard_drive_0_label = DH0\njoystick_port_1 = keyboard\n")
-    cfg = os.path.join(demo, "jl-demo-cdtv8.fs-uae" if "--cdtv8" in sys.argv else "jl-demo.fs-uae")
+    pick = "cdtv8" if "--cdtv8" in sys.argv else "cdtv" if "--cdtv" in sys.argv else None
+    cfg = os.path.join(demo, f"jl-demo-{pick}.fs-uae" if pick else "jl-demo.fs-uae")
     print(f"built {os.path.relpath(demo, ROOT)}: {len(GAMES)} games, config {os.path.relpath(cfg, ROOT)}")
     if "--open" in sys.argv:
         subprocess.Popen(["open", "-a", "FS-UAE", "--args", cfg])

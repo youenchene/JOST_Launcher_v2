@@ -27,7 +27,7 @@ Version 2 is a rewrite in C of the Blitz Basic version, same look:
    with 0.3)
  - no limit on the number of games (0.3 stopped at 255)
 
-Source : https://github.com/youenchene/JOST_Launcher
+Source : https://github.com/youenchene/JOST_Launcher_v2
 
 # How to setup
 

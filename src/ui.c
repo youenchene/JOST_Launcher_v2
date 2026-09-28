@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "sys.h"
 #include <exec/memory.h>
 #include <graphics/gfxmacros.h>
 #include <graphics/copper.h>
@@ -103,6 +104,7 @@ static BOOL openWindow(void) {
 }
 
 BOOL uiOpen(const char *version) {
+	jlForcePal(); // some real CDTV/A500 units misreport NTSC; see sys.h
 	struct NewScreen ns = {0};
 	ns.Width = SCREEN_W;
 	ns.Height = SCREEN_H;

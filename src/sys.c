@@ -1,8 +1,11 @@
 #include "sys.h"
+#include <exec/execbase.h>
 #include <exec/memory.h>
 #include <dos/dos.h>
+#include <graphics/gfxbase.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
+#include <proto/graphics.h>
 
 void *jlAlloc(ULONG size, ULONG flags) {
 	ULONG *p = AllocMem(size + 4, flags);
@@ -77,4 +80,27 @@ UWORD jlStrCat(char *dst, UWORD cap, const char *src) {
 	while(*src && n + 1 < cap) dst[n++] = *src++;
 	dst[n] = '\0';
 	return n;
+}
+
+// Same measurement tests/tools/palfix.c uses on the emulator: sample the
+// vertical beam position for a while and find its max. A PAL frame is 312-313
+// lines, NTSC 262-263, so seeing more than 262 proves the hardware is PAL
+// even if GfxBase disagrees.
+void jlForcePal(void) {
+	if(GfxBase->DisplayFlags & PAL) {
+		return;
+	}
+	UWORD max = 0;
+	for(ULONG i = 0; i < 40000; ++i) {
+		UWORD v = (UWORD)(((*(volatile UWORD *)0xDFF004 & 1) << 8) | (*(volatile UWORD *)0xDFF006 >> 8));
+		if(v > max) max = v;
+	}
+	if(max > 262) {
+		Forbid();
+		SysBase->VBlankFrequency = 50;
+		GfxBase->DisplayFlags = (UWORD)((GfxBase->DisplayFlags & ~NTSC) | PAL);
+		GfxBase->NormalDisplayRows = 256;
+		GfxBase->MaxDisplayRow = 311;
+		Permit();
+	}
 }

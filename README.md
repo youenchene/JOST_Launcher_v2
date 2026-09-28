@@ -20,13 +20,13 @@ A folder mode is also available to see your games and demo by the parent folder:
 
 Measured on an emulated A500 (kickstart 1.3, 512K chip + 512K slow, 420K free fast memory), with 250 games and the same Workbench 1.3 disk:
 
-| | 0.3 (Blitz Basic) | 2.0 (C) |
-|---|---|---|
-| List on screen | 23.4 s | 10.8 s |
-| Fire → jst starts | ~10.7 s | ~1.9 s |
-| Memory left for the game | 222K | 407K |
-| Back after a game | list broken | same list, same selection |
-| Number of games | 255 max | no limit (tested with 3000) |
+| | 0.3 (Blitz Basic) | 2.0 (C) | Gain |
+|---|---|---|---|
+| List on screen | 23.4 s | 10.8 s | **2.2× faster** |
+| Fire → jst starts | ~10.7 s | ~1.9 s | **5.6× faster** |
+| Memory left for the game | 222K | 407K | **+83%** |
+| Back after a game | list broken | same list, same selection | — |
+| Number of games | 255 max | no limit (tested with 3000) | — |
 
 - While a game runs, only a small resident part of the launcher (13K) stays in memory: the menu is unloaded and reloaded after the game.
 - jst is started directly, without a script or a shell.

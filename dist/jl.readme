@@ -25,10 +25,11 @@ You can fully control the launcher with your CDTV Remote, mouse mode
 Version 2 is a rewrite in C of the Blitz Basic version, same look and
 same config file. Measured on an A500 (512K chip + 512K slow), 250 games:
 
-                          0.3            2.0
-  list on screen          23.4 s         10.8 s
-  fire -> jst starts      ~10.7 s        ~1.9 s
-  memory left for game    222K           407K (of 420K free)
+                          0.3            2.0            gain
+  list on screen          23.4 s         10.8 s         2.2x faster
+  fire -> jst starts      ~10.7 s        ~1.9 s         5.6x faster
+  memory left for game    222K           407K           +83%
+                                         (of 420K free)
   back after a game       list broken    same list, same selection
   number of games         255 max        no limit (tested with 3000)
 

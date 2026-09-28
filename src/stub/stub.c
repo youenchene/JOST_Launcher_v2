@@ -13,7 +13,7 @@
 #define MENU_NAME "C:jl-menu"
 #define MENU_STACK 8192
 
-static const char s_szVersion[] __attribute__((used)) = "$VER: jl 2.0 (2026)";
+static const char s_szVersion[] __attribute__((used)) = "$VER: jl 2.1 (2026)";
 
 // Runs one menu session. The menu's code and stack are gone when this returns.
 static BOOL runMenu(tJlShared *sh) {

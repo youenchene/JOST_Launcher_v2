@@ -4,7 +4,7 @@
 
 #include <exec/types.h>
 
-#define JL_VERSION "2.0"
+#define JL_VERSION "2.1"
 
 // Standalone (jl-menu run by hand): runs until the user quits, launching
 // games itself (the menu stays loaded). Returns a DOS return code.

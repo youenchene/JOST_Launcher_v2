@@ -131,3 +131,6 @@ and `dist/jl.readme` (`Version:` and a `## X.Y` section: it becomes the release
 notes), then push a tag `vX.Y`. `.github/workflows/release.yml` runs
 `tools/release` (no kit needed) and publishes `jl.lha`, `jl`, `jl-menu`,
 `jl.readme` and `jl-config.cfg`. It fails if the tag and the versions differ.
+
+To publish on Aminet (an update of `util/misc/jl`), follow `AMINET_UPLOAD.md`
+once the GitHub release is out and tested on real hardware.
